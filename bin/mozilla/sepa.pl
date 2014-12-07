@@ -4,6 +4,7 @@ use List::MoreUtils qw(any none uniq);
 use List::Util qw(sum first);
 use POSIX qw(strftime);
 
+use Data::Dumper;
 use SL::BankAccount;
 use SL::Chart;
 use SL::CT;
@@ -94,12 +95,28 @@ sub bank_transfer_create {
   my $arap_id        = $vc eq 'customer' ? 'ar_id' : 'ap_id';
   my $invoices       = SL::SEPA->retrieve_open_invoices(vc => $vc);
 
+  # load all open invoices (again), but grep out the ones that were selected with checkboxes beforehand ($_->selected). At this stage we again have all the invoice information, including dropdown with payment_type options
+  # all the information from retrieve_open_invoices is then ADDED to what was passed via @{ $form->{bank_transfers} }
+  # parse amount from the entry in the form, but take skonto_amount from PT again
+  # the map inserts the values of invoice_map directly into the array of hashes
   my %invoices_map   = map { $_->{id} => $_ } @{ $invoices };
   my @bank_transfers =
     map  +{ %{ $invoices_map{ $_->{$arap_id} } }, %{ $_ } },
     grep  { $_->{selected} && (0 < $_->{amount}) && $invoices_map{ $_->{$arap_id} } }
     map   { $_->{amount} = $form->parse_amount($myconfig, $_->{amount}); $_ }
           @{ $form->{bank_transfers} || [] };
+
+  # override default payment_type selection and set it to the one chosen by the user
+  # in the previous step, so that we don't need the logic in the template
+  foreach my $bt (@bank_transfers) {
+    foreach my $type ( @{$bt->{payment_select_options}} ) {
+      if ( $type->{payment_type} eq $bt->{payment_type} ) {
+        $type->{selected} = 1;
+      } else {
+        $type->{selected} = 0;
+      };
+    };
+  };
 
   if (!scalar @bank_transfers) {
     $form->error($locale->text('You have selected none of the invoices.'));
