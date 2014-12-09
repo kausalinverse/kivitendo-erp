@@ -7,6 +7,7 @@ use Carp;
 use SL::DB::MetaSetup::PurchaseInvoice;
 use SL::DB::Manager::PurchaseInvoice;
 use SL::DB::Helper::LinkedRecords;
+use SL::DB::Helper::Payment qw(pay_invoice skonto_date skonto_charts amount_less_skonto within_skonto_period percent_skonto reference_account reference_amount transactions open_amount open_percent remaining_skonto_days skonto_amount check_skonto_configuration valid_skonto_amount get_payment_suggestions validate_payment_type);
 use SL::Locale::String qw(t8);
 
 # The calculator hasn't been adjusted for purchase invoices yet.

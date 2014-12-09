@@ -9,7 +9,7 @@ use Carp;
 use List::Util qw(first);
 
 use Rose::DB::Object::Helpers ();
-
+use SL::DB::Helper::Payment qw(pay_invoice skonto_date skonto_charts amount_less_skonto within_skonto_period percent_skonto reference_account reference_amount transactions open_amount open_percent remaining_skonto_days skonto_amount check_skonto_configuration valid_skonto_amount get_payment_suggestions validate_payment_type);
 use SL::DB::MetaSetup::Invoice;
 use SL::DB::Manager::Invoice;
 use SL::DB::Helper::FlattenToForm;
@@ -344,14 +344,6 @@ sub date {
   goto &transdate;
 }
 
-sub transactions {
-  my ($self) = @_;
-
-  return unless $self->id;
-
-  require SL::DB::AccTransaction;
-  SL::DB::Manager::AccTransaction->get_all(query => [ trans_id => $self->id ]);
-}
 
 1;
 
