@@ -1,0 +1,112 @@
+[% USE HTML %]
+[%- USE LxERP %]
+[%- USE T8 %]
+[%- USE L %]
+<div class="listtop">[% title %]</div>
+<div style="padding-bottom: 15px">
+[% 'Filter' | $T8 %]:
+<form id="filter" name="filter" method="post" action="controller.pl">
+ [% L.hidden_tag('vc', vc) %]
+ <table>
+  <tr>
+    <td>[% 'Invoice number' | $T8 %]</td>
+    <td>[% L.input_tag('filter.invnumber:substr::ilike', filter.invnumber_substr__ilike, size = 20, class="filter") %]</td>
+  </tr>
+    [%- IF vc == 'customer' %]
+    <td>[% 'Customer Number' | $T8 %]</td>
+    <td>[% L.input_tag('filter.customer.customernumber:substr::ilike', filter.customer_customernumber_substr__ilike, size = 20, class="filter") %]</td>
+    [%- ELSE %]
+    <td>[% 'Vendor Number' | $T8 %]</td>
+    <td>[% L.input_tag('filter.vendor.vendornumber:substr::ilike', filter.vendor_vendornumber_substr__ilike, size = 20, class="filter") %]</td>
+    [% END %]
+  </tr>
+  <tr>
+    [%- IF vc == 'customer' %]
+    <td>[% 'Customer Name' | $T8 %]</td>
+    <td>[% L.input_tag('filter.customer.name:substr::ilike', filter.customer_name_substr__ilike, size = 20, class="filter") %]</td>
+    [%- ELSE %]
+    <td>[% 'Vendor Name' | $T8 %]</td>
+    <td>[% L.input_tag('filter.vendor.name:substr::ilike', filter.vendor_name_substr__ilike, size = 20, class="filter") %]</td>
+    [% END %]
+  </tr>
+  <tr>
+</table>
+[% L.button_tag("this.form.reset(); refresh_plot();", LxERP.t8("Reset")) %]
+</form>
+
+<br><br>
+[% 'Settings' | $T8 %]:
+ <table>
+  <tr>
+    <td>[% 'Bank account' | $T8 %]</td>
+    <td>[% L.select_tag('bank_account', BANK_ACCOUNTS, default=chart_id, value_key='chart_id', title_key='name', with_empty=0, style='width:450px') %]</td>
+  </tr>
+  <tr>
+    <td>[% 'Payment Date' | $T8 %]</td>
+    <td>  [% L.date_tag('paydate', DATE) %]</td>
+  </tr>
+  <tr>
+    <td>[% 'Source' | $T8 %]</td>
+    <td>[% L.input_tag('source', source, size= 40) %]</td>
+  </tr>
+  </table>
+</div>
+
+[%- INCLUDE 'common/flash.html' %]
+
+<div id="chartdata">
+[% PROCESS 'payments/_invoice_list.html' %]
+</div>
+
+
+<script type="text/javascript">
+  $(function() {
+    [% IF initfilter.invnumber %] $( "#filter_invnumber_substr_ilike" ).val('[% initfilter.invnumber %]'); [% END %]
+    [% IF initfilter.name %] $( "#filter_customer_name_substr_ilike" ).val('[% initfilter.name %]'); [% END %]
+    [% IF initfilter.customernumber %] $( "#filter_customer_customernumber_substr_ilike" ).val('[% initfilter.customernumber %]'); [% END %]
+    [% IF initfilter.vendornumber %]   $( "#filter_vendor_vendornumber_substr_ilike" ).val('[% initfilter.vendornumber %]'); [% END %]
+    refresh_plot();
+    $( "#filter_invnumber_substr_ilike" ).focus();
+
+});
+
+  addInputCallback($(".filter"), refresh_plot , 300 )
+
+  function refresh_plot() {
+    var filterdata = $('#filter').serialize()
+    var url = './controller.pl?action=Payments/invoicelist_dynamic_table&vc=[% vc %]&' + filterdata;
+
+    $.ajax({
+        url : url,
+        type: 'POST',
+        success: function(data){
+            $('#chartdata').html(data);
+        }
+    })
+
+  };
+
+function addInputCallback(inputfield, callback, delay) {
+    var timer = null;
+    inputfield.on('keyup', function() {
+        if (timer) {
+            window.clearTimeout(timer);
+        }
+        timer = window.setTimeout( function() {
+            timer = null;
+            callback();
+        }, delay );
+    });
+    inputfield = null;
+}
+</script>
+
+<style type="text/css">
+.skonto {
+  background: red;
+};
+.inputerror {
+  background: yellow;
+};
+</style>
+

@@ -1,0 +1,94 @@
+[%- USE LxERP %]
+[%- USE T8 %]
+[%- USE L %]
+[%- USE P %]
+<table>
+ <tr class="listheading">
+  <th>[%- LxERP.t8("Invoice number") %]</th>
+  <th>[%- LxERP.t8("Type") %]</th>
+  <th>[%- LxERP.t8("Customer") %]</th>
+  <th>[%- LxERP.t8("Amount") %]</th>
+  <th>[%- LxERP.t8("Paid") %]</th>
+  <th>[%- LxERP.t8("Open") %]</th>
+  <th>[%- LxERP.t8("Transdate") %]</th>
+  <th>[%- LxERP.t8("Payment amount") %]</th>
+  <th>[%- LxERP.t8("Payment type") -%]</th>
+  <th>[%- LxERP.t8("Pay") %]</th>
+  <th>[%- LxERP.t8("Skonto information") %]</th>
+  <th>[%- LxERP.t8("hide") %]</th>
+ </tr>
+ [% FOREACH invoice = INVOICES %]
+ [% L.hidden_tag('id_' _ loop.count , invoice.id) %]
+  <input type="hidden" id="skonto_amount_[% loop.count %]" name="skonto_amount_[% loop.count %]" value="[% LxERP.format_amount(invoice.skonto_amount, 2) %]">
+  <input type="hidden" id="invoice_open_amount_[% loop.count %]" name="invoice_open_amount_[% loop.count %]" value="[% LxERP.format_amount(invoice.amount - invoice.paid, 2) %]">
+  <input type="hidden" id="invoice_amount_less_skonto_[% loop.count %]" name="invoice_amount_without_skonto_[% loop.count %]" value="[% LxERP.format_amount(invoice.amount_less_skonto, 2) %]">
+
+  <tr id="tr_[% loop.count %]" class="listrow[% loop.count % 2 %]">
+  <td>  [% P.invoice(invoice, no_link => 0) %]</td>
+  <td align="right" >  [% invoice.abbreviation %] </td>
+  <td>
+      [%- IF vc == 'customer' %]
+        [% P.customer(invoice.customer, no_link => 0) %]
+      [%- ELSE %]
+        [% P.vendor(invoice.vendor, no_link => 0) %]
+      [% END %]
+  </td>
+  <td align="right" >  [% invoice.amount_as_number %] </td>
+  <td align="right" id="paid_[% loop.count %]">  [% invoice.paid_as_number %] </td>
+  <td align="right" id="open_[% loop.count %]"> [% LxERP.format_amount(invoice.open_amount, 2) %] ([% LxERP.format_amount(invoice.open_percent, 2) %]%) </td>
+  <td align="right" >  [% invoice.transdate_as_date %] </td>
+  <td align="right" >  [% L.input_tag('pay_amount_' _ loop.count, LxERP.format_amount(invoice.invoice_amount_suggestion, 2), size=10) %]</td>
+  <td> [% L.select_tag('payment_type_' _ loop.count, invoice.payment_select_options, value_key => 'payment_type', title_key => 'display', id => 'payment_type_' _ loop.count, class => 'payment_type_selector' ) %]</td>
+  <td> [% L.button_tag("pay_invoice(" _ loop.count _ ")", LxERP.t8("Pay amount")) %]</td>
+  <td align="left" [%- IF invoice.within_skonto_period %]style="background-color: LightGreen"[%- END %]>[%- IF invoice.skonto_date %][% LxERP.format_amount(invoice.payment_terms.percent_skonto * 100, 2) %] % = [% LxERP.format_amount(invoice.skonto_amount,2) %] [% LxERP.t8("Valid until") %] [% invoice.skonto_date.to_kivitendo %] ([% invoice.remaining_skonto_days %]) [%- END %]</td>
+  <td> [% L.button_tag("hide_row(" _ loop.count _ ")", LxERP.t8("hide")) %] </td>
+  </tr>
+
+  [% END %]
+</table>
+
+<script type="text/javascript">
+
+function pay_invoice(loop) {
+
+  if ( $('#pay_amount_' + loop).val().length === 0 ) {
+    alert("needs a value");
+    $('#pay_amount_' + loop).focus();
+    $('#pay_amount_' + loop).addClass('inputerror');
+    return false;
+  };
+
+  var data = {
+        action              : "Payments/pay_invoice",
+        loop                : loop,
+        payment_type        : $("#payment_type_" + loop + " option:selected").val(),
+        arap_id             : $('#id_' + loop).val(),
+        bank_id             : $("#bank_account option:selected").val(),
+        global_payment_date : $('#paydate').val(),
+        amount              : $('#pay_amount_' + loop).val(),
+        source              : $('#source').val(),
+        vc                  : $('#vc').val(),
+  };
+  $.post("controller.pl", data, kivi.eval_json_result);
+}
+
+function hide_row(loop) {
+      $('#tr_' + loop).hide();
+};
+
+// bind handler to class payment_type_selector so that an event fires each time something is selected
+// changing the drop-box changes the value in the input field for pay_amount
+// ugly hack where a regex is used to get at the row id
+$( ".payment_type_selector" ).change(function() {
+  type_id = $(this).attr('id');
+  var id = type_id.match(/\d*$/);
+  if ( $(this).val() == "without_skonto" ) {
+    $('#pay_amount_' + id).val( $('#invoice_open_amount_' + id).val() );
+  } else if ( $(this).val() == "difference_as_skonto" ) {
+    $('#pay_amount_' + id).val( $('#invoice_open_amount_' + id).val() );
+  } else if ( $(this).val() == "with_skonto_pt" ) {
+    $('#pay_amount_' + id).val( $('#invoice_amount_less_skonto_' + id).val() );
+  }
+});
+
+</script>
