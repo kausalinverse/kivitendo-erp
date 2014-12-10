@@ -6,7 +6,7 @@
  <tr class="listheading">
   <th>[%- LxERP.t8("Invoice number") %]</th>
   <th>[%- LxERP.t8("Type") %]</th>
-  <th>[%- LxERP.t8("Customer") %]</th>
+  <th>[%- IF vc == 'customer' %] [%- LxERP.t8("Customer") %] [%- ELSE %] [%- LxERP.t8("Vendor") %] [%- END %]</th>
   <th>[%- LxERP.t8("Amount") %]</th>
   <th>[%- LxERP.t8("Paid") %]</th>
   <th>[%- LxERP.t8("Open") %]</th>
@@ -40,7 +40,7 @@
   <td align="right" >  [% L.input_tag('pay_amount_' _ loop.count, LxERP.format_amount(invoice.invoice_amount_suggestion, 2), size=10) %]</td>
   <td> [% L.select_tag('payment_type_' _ loop.count, invoice.payment_select_options, value_key => 'payment_type', title_key => 'display', id => 'payment_type_' _ loop.count, class => 'payment_type_selector' ) %]</td>
   <td> [% L.button_tag("pay_invoice(" _ loop.count _ ")", LxERP.t8("Pay amount")) %]</td>
-  <td align="left" [%- IF invoice.within_skonto_period %]style="background-color: LightGreen"[%- END %]>[%- IF invoice.skonto_date %][% LxERP.format_amount(invoice.payment_terms.percent_skonto * 100, 2) %] % = [% LxERP.format_amount(invoice.skonto_amount,2) %] [% LxERP.t8("Valid until") %] [% invoice.skonto_date.to_kivitendo %] ([% invoice.remaining_skonto_days %]) [%- END %]</td>
+  <td align="left" [%- IF invoice.within_skonto_period %]style="background-color: LightGreen"[%- END %]>[%- IF invoice.skonto_date %][% LxERP.format_amount(invoice.percent_skonto * 100, 2) %] % = [% LxERP.format_amount(invoice.skonto_amount,2) %] [% LxERP.t8("Valid until") %] [% invoice.skonto_date.to_kivitendo %] ([% invoice.remaining_skonto_days %]) [%- END %]</td>
   <td> [% L.button_tag("hide_row(" _ loop.count _ ")", LxERP.t8("hide")) %] </td>
   </tr>
 
