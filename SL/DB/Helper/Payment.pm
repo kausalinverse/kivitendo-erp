@@ -343,8 +343,8 @@ sub percent_skonto {
     $percent_skonto = $self->payment_terms->percent_skonto;
   } else {
     return undef unless ref $self->vendor->payment_terms;
-    return undef unless $self->vendor->payment_terms->terms_skonto > 0;
-    $percent_skonto = $self->vendor->payment_terms->terms_skonto / 100;
+    return undef unless $self->vendor->payment_terms->percent_skonto > 0;
+    $percent_skonto = $self->vendor->payment_terms->percent_skonto;
   };
 
   return $percent_skonto;
